@@ -1,9 +1,36 @@
 from flask import Blueprint, jsonify, request
 
 from src.data import students as student_data
+from src.data.students import FIELDS, is_valid_email
 
 students_bp = Blueprint("students", __name__)
+REQUIRED_FIELDS = ("firstName", "lastName", "email", "grade", "field")
 
+
+def validate_student(data, current_id=None, require_all=True):
+    if not isinstance(data, dict):
+        return "JSON object required", 400
+    if require_all and any(key not in data for key in REQUIRED_FIELDS):
+        return "missing fields", 400
+    for key in ("firstName", "lastName"):
+        if key in data and (not isinstance(data[key], str) or len(data[key].strip()) < 2):
+            return "name too short", 400
+    if "email" in data:
+        if not is_valid_email(data["email"]):
+            return "invalid email", 400
+        if any(
+            student["email"].casefold() == data["email"].casefold()
+            and student["id"] != current_id
+            for student in student_data.students
+        ):
+            return "email exists", 409
+    if "grade" in data:
+        grade = data["grade"]
+        if isinstance(grade, bool) or not isinstance(grade, (int, float)) or not 0 <= grade <= 20:
+            return "invalid grade", 400
+    if "field" in data and data["field"] not in FIELDS:
+        return "invalid field", 400
+    return None
 
 @students_bp.route("/students", methods=["GET"])
 def get_students():
@@ -37,3 +64,14 @@ def get_student(student_id):
     if student is None:
         return jsonify({"error": "not found"}), 404
     return jsonify(student), 200
+
+@students_bp.route("/students", methods=["POST"])
+def create_student():
+    data = request.get_json(silent=True)
+    error = validate_student(data)
+    if error:
+        return jsonify({"error": error[0]}), error[1]
+    new_id = max((s["id"] for s in student_data.students), default=0) + 1
+    student = {"id": new_id, **data}
+    student_data.students.append(student)
+    return jsonify(student), 201
