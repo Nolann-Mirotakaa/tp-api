@@ -75,3 +75,33 @@ def create_student():
     student = {"id": new_id, **data}
     student_data.students.append(student)
     return jsonify(student), 201
+
+@students_bp.route("/students/<student_id>", methods=["PUT"])
+def update_student(student_id):
+    parsed_id = parse_id(student_id)
+    if parsed_id is None:
+        return jsonify({"error": "invalid id"}), 400
+    student = next((s for s in student_data.students if s["id"] == parsed_id), None)
+    if student is None:
+        return jsonify({"error": "not found"}), 404
+    data = request.get_json(silent=True)
+    error = validate_student(data, current_id=parsed_id)
+    if error:
+        return jsonify({"error": error[0]}), error[1]
+    updated = {**student, **data}
+    error = validate_student(updated, current_id=parsed_id)
+    if error:
+        return jsonify({"error": error[0]}), error[1]
+    student.update(data)
+    return jsonify(student), 200
+
+@students_bp.route("/students/<student_id>", methods=["DELETE"])
+def delete_student(student_id):
+    parsed_id = parse_id(student_id)
+    if parsed_id is None:
+        return jsonify({"error": "invalid id"}), 400
+    student = next((s for s in student_data.students if s["id"] == parsed_id), None)
+    if student is None:
+        return jsonify({"error": "not found"}), 404
+    student_data.students.remove(student)
+    return jsonify({"message": "deleted"}), 200
