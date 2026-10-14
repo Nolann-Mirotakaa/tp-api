@@ -52,6 +52,31 @@ def get_students():
         result = result[start:start + limit]
     return jsonify(result), 200
 
+@students_bp.route("/students/stats", methods=["GET"])
+def stats():
+    total = len(student_data.students)
+    average = round(sum(s["grade"] for s in student_data.students) / total, 2) if total else 0
+    by_field = {field: sum(s["field"] == field for s in student_data.students) for field in FIELDS}
+    best = max(student_data.students, key=lambda s: s["grade"], default=None)
+    return jsonify({
+        "totalStudents": total,
+        "averageGrade": average,
+        "studentsByField": by_field,
+        "bestStudent": best,
+    }), 200
+
+@students_bp.route("/students/search", methods=["GET"])
+def search():
+    query = request.args.get("q", "").strip()
+    if not query:
+        return jsonify({"error": "missing query"}), 400
+    query = query.casefold()
+    result = [
+        s for s in student_data.students
+        if query in s["firstName"].casefold() or query in s["lastName"].casefold()
+    ]
+    return jsonify(result), 200
+
 def parse_id(value):
     return int(value) if value.isdigit() else None
 
