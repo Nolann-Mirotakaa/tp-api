@@ -32,6 +32,7 @@ def validate_student(data, current_id=None, require_all=True):
         return "invalid field", 400
     return None
 
+
 @students_bp.route("/students", methods=["GET"])
 def get_students():
     result = list(student_data.students)
@@ -52,6 +53,7 @@ def get_students():
         result = result[start:start + limit]
     return jsonify(result), 200
 
+
 @students_bp.route("/students/stats", methods=["GET"])
 def stats():
     total = len(student_data.students)
@@ -65,6 +67,7 @@ def stats():
         "bestStudent": best,
     }), 200
 
+
 @students_bp.route("/students/search", methods=["GET"])
 def search():
     query = request.args.get("q", "").strip()
@@ -77,8 +80,10 @@ def search():
     ]
     return jsonify(result), 200
 
+
 def parse_id(value):
     return int(value) if value.isdigit() else None
+
 
 @students_bp.route("/students/<student_id>", methods=["GET"])
 def get_student(student_id):
@@ -90,6 +95,7 @@ def get_student(student_id):
         return jsonify({"error": "not found"}), 404
     return jsonify(student), 200
 
+
 @students_bp.route("/students", methods=["POST"])
 def create_student():
     data = request.get_json(silent=True)
@@ -100,6 +106,7 @@ def create_student():
     student = {"id": new_id, **data}
     student_data.students.append(student)
     return jsonify(student), 201
+
 
 @students_bp.route("/students/<student_id>", methods=["PUT"])
 def update_student(student_id):
@@ -119,6 +126,7 @@ def update_student(student_id):
         return jsonify({"error": error[0]}), error[1]
     student.update(data)
     return jsonify(student), 200
+
 
 @students_bp.route("/students/<student_id>", methods=["DELETE"])
 def delete_student(student_id):
