@@ -93,7 +93,7 @@ def get_student(student_id):
     student = next((s for s in student_data.students if s["id"] == parsed_id), None)
     if student is None:
         return jsonify({"error": "not found"}), 404
-    return jsonify(student), 201
+    return jsonify(student), 200
 
 
 @students_bp.route("/students", methods=["POST"])
